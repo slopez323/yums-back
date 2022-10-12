@@ -113,17 +113,19 @@ router.get("/user", async function (req, res, next) {
   }
 });
 
-router.post("/create-album", async function (req, res, next) {
+router.put("/create-album", async function (req, res, next) {
   try {
-    const userId = req.body.userId;
-    const name = req.body.name;
-    const location = req.body.location;
-    const coverPhoto = req.body.coverPhoto;
-    const date = req.body.date;
-    const rating = req.body.rating;
-    const dishes = req.body.dishes;
-    const otherImages = req.body.otherImages;
-    const notes = req.body.notes;
+    const {
+      userId,
+      name,
+      location,
+      coverPhoto,
+      date,
+      rating,
+      dishes,
+      otherImages,
+      notes,
+    } = req.body;
 
     const albumId = uuid();
     const dishList = dishes.map((dish) => {
@@ -154,6 +156,82 @@ router.post("/create-album", async function (req, res, next) {
     );
 
     res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.json({ success: false });
+  }
+});
+
+router.put("/edit-album", async function (req, res, next) {
+  try {
+    const {
+      userId,
+      albumId,
+      name,
+      location,
+      coverPhoto,
+      date,
+      rating,
+      dishes,
+      otherImages,
+      notes,
+    } = req.body;
+
+    const dishList = dishes.map((dish) => {
+      const dishId = uuid();
+      return { ...dish, dishId };
+    });
+
+    const newAlbumId = uuid();
+    const updatedAlbum = {
+      name,
+      albumId: newAlbumId,
+      coverPhoto,
+      rating,
+      location,
+      date,
+      dishList,
+      otherImages,
+      notes,
+    };
+
+    const collection = await yumsDB().collection("users");
+    await collection.updateOne(
+      { id: userId },
+      {
+        $pull: { restaurantList: { albumId } },
+      }
+    );
+    await collection.updateOne(
+      { id: userId },
+      {
+        $push: {
+          restaurantList: updatedAlbum,
+        },
+      }
+    );
+
+    res.json({ success: true, message: "Album updated" });
+  } catch (e) {
+    console.error(e);
+    res.json({ success: false });
+  }
+});
+
+router.delete("/delete-album", async function (req, res, next) {
+  try {
+    const id = req.body.userId;
+    const albumId = req.body.albumId;
+
+    const collection = await yumsDB().collection("users");
+    await collection.updateOne(
+      { id },
+      {
+        $pull: { restaurantList: { albumId } },
+      }
+    );
+
+    res.json({ success: true, message: "Album Deleted." });
   } catch (e) {
     console.error(e);
     res.json({ success: false });
