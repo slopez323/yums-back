@@ -4,7 +4,7 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 require("dotenv").config();
-
+const tokenVerif = require("./helpers/tokenVerif");
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var imagesRouter = require("./routes/images");
@@ -12,10 +12,18 @@ var imagesRouter = require("./routes/images");
 var app = express();
 
 const cors = require("cors");
-app.use(cors());
-app.options("*", cors());
+// app.use(cors());
+// app.options("*", cors());
+
+app.use(
+  cors({
+    credentials: true,
+    origin: process.env.ORIGIN,
+  })
+);
 
 var { mongoConnect } = require("./mongo.js");
+const req = require("express/lib/request");
 mongoConnect();
 
 // view engine setup
@@ -27,6 +35,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use(tokenVerif);
 
 app.use("/", indexRouter);
 app.use("/users", usersRouter);

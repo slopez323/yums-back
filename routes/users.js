@@ -32,12 +32,19 @@ router.post("/register", async function (req, res, next) {
     const token = jwt.sign(data, jwtSecretKey, { expiresIn: "24h" });
 
     if (userId) {
+      res.cookie("session_token", token, {
+        httpOnly: true,
+        secure: false,
+      });
       res.json({ success: true, token });
       return;
     }
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: e, success: false });
+    res.json({
+      success: false,
+      message: "Unable to create account.  Try again.",
+    });
+    next(e);
   }
 });
 
@@ -60,9 +67,13 @@ router.post("/login", async function (req, res, next) {
       time: new Date(),
       userId: user.id,
     };
-    const token = jwt.sign(data, jwtSecretKey, { expiresIn: "24h" });
+    const token = jwt.sign(data, jwtSecretKey);
 
     if (match) {
+      res.cookie("session_token", token, {
+        httpOnly: true,
+        secure: false,
+      });
       res.json({ success: true, token });
       return;
     } else {
@@ -70,35 +81,61 @@ router.post("/login", async function (req, res, next) {
       return;
     }
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ message: e, success: false });
+    res.json({
+      success: false,
+      message: "Unable to log in.  Try again.",
+    });
+    next(e);
   }
 });
 
-router.get("/validate-token", function (req, res, next) {
+router.get("/check-login", async function (req, res, next) {
   try {
-    const tokenHeaderKey = process.env.TOKEN_HEADER_KEY;
-    const jwtSecretKey = process.env.JWT_SECRET_KEY;
-
-    const token = req.header(tokenHeaderKey);
-    const verified = jwt.verify(token, jwtSecretKey);
-
-    if (verified) {
-      return res.json({
-        success: true,
-        message: verified.userId,
-      });
+    if (!req.user) {
+      res.json({ success: false });
+      next();
+      return;
     }
-    return res.json({ success: false });
+    res.json({ success: true, user: req.user.id });
   } catch (e) {
-    console.error(e);
-    res.json({ success: false });
+    next(e);
   }
 });
 
-router.get("/user", async function (req, res, next) {
+router.get("/logout", function (req, res, next) {
   try {
-    const id = req.query.id;
+    res.clearCookie("session_token");
+    res.json({ success: true, message: "Successfully logged out." });
+  } catch (e) {
+    res.json({
+      success: false,
+      message: "Unable to sign out.  Try again.",
+    });
+    next(e);
+  }
+});
+
+router.delete("/delete-account", async function (req, res, next) {
+  try {
+    const id = req.user.id;
+    const collection = await yumsDB().collection("users");
+    await collection.deleteOne({ id });
+
+    res.clearCookie("session_token");
+    res.json({ success: true, message: "Successfully deleted account." });
+  } catch (e) {
+    res.json({
+      success: false,
+      message: "Unable to delete account.  Try again.",
+    });
+    next(e);
+  }
+});
+
+router.get("/user-data", async function (req, res, next) {
+  try {
+    const id = req.user.id;
+    console.log(id);
 
     const collection = await yumsDB().collection("users");
     const user = await collection.findOne(
@@ -108,15 +145,15 @@ router.get("/user", async function (req, res, next) {
 
     res.json({ success: true, message: user });
   } catch (e) {
-    console.error(e);
     res.json({ success: false });
+    next(e);
   }
 });
 
 router.put("/create-album", async function (req, res, next) {
   try {
+    const userId = req.user.id;
     const {
-      userId,
       name,
       location,
       coverPhoto,
@@ -154,18 +191,17 @@ router.put("/create-album", async function (req, res, next) {
         },
       }
     );
-
-    res.json({ success: true });
+    res.json({ success: true, message: newAlbum });
   } catch (e) {
-    console.error(e);
     res.json({ success: false });
+    next(e);
   }
 });
 
 router.put("/edit-album", async function (req, res, next) {
   try {
+    const userId = req.user.id;
     const {
-      userId,
       albumId,
       name,
       location,
@@ -211,16 +247,16 @@ router.put("/edit-album", async function (req, res, next) {
       }
     );
 
-    res.json({ success: true, message: "Album updated" });
+    res.json({ success: true, message: updatedAlbum });
   } catch (e) {
-    console.error(e);
     res.json({ success: false });
+    next(e);
   }
 });
 
 router.delete("/delete-album", async function (req, res, next) {
   try {
-    const id = req.body.userId;
+    const id = req.user.id;
     const albumId = req.body.albumId;
 
     const collection = await yumsDB().collection("users");
@@ -233,8 +269,8 @@ router.delete("/delete-album", async function (req, res, next) {
 
     res.json({ success: true, message: "Album Deleted." });
   } catch (e) {
-    console.error(e);
     res.json({ success: false });
+    next(e);
   }
 });
 

@@ -20,8 +20,7 @@ router.delete("/delete", async function (req, res, next) {
       }
     });
   } catch (e) {
-    console.error(e);
-    res.json({ success: false });
+    next(e);
   }
 });
 
