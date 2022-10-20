@@ -18,7 +18,6 @@ router.post("/register", async function (req, res, next) {
       return;
     }
 
-    // const userType = username === "admin" ? "admin" : "user";
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);
     const hash = await bcrypt.hash(password, salt);
@@ -135,7 +134,6 @@ router.delete("/delete-account", async function (req, res, next) {
 router.get("/user-data", async function (req, res, next) {
   try {
     const id = req.user.id;
-    console.log(id);
 
     const collection = await yumsDB().collection("users");
     const user = await collection.findOne(
