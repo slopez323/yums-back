@@ -28,7 +28,7 @@ router.post("/register", async function (req, res, next) {
       time: new Date(),
       userId,
     };
-    const token = jwt.sign(data, jwtSecretKey, { expiresIn: "24h" });
+    const token = jwt.sign(data, jwtSecretKey);
 
     if (userId) {
       res.cookie("session_token", token, {
