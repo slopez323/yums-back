@@ -34,6 +34,7 @@ router.post("/register", async function (req, res, next) {
       res.cookie("session_token", token, {
         httpOnly: true,
         secure: false,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       });
       res.json({ success: true, token });
       return;
@@ -72,6 +73,7 @@ router.post("/login", async function (req, res, next) {
       res.cookie("session_token", token, {
         httpOnly: true,
         secure: false,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       });
       res.json({ success: true, token });
       return;
