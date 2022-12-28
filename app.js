@@ -16,10 +16,11 @@ const cors = require("cors");
 // app.options("*", cors());
 
 app.use(
-  cors({
-    credentials: true,
-    origin: process.env.ORIGIN,
-  })
+  cors()
+  //   {
+  //   credentials: true,
+  //   origin: process.env.ORIGIN,
+  // }
 );
 
 var { mongoConnect } = require("./mongo.js");
