@@ -13,7 +13,6 @@ var app = express();
 
 const cors = require("cors");
 // app.use(cors());
-// app.options("*", cors());
 
 app.use(
   cors({
@@ -21,6 +20,7 @@ app.use(
     origin: process.env.ORIGIN,
   })
 );
+app.options("*", cors());
 
 var { mongoConnect } = require("./mongo.js");
 const req = require("express/lib/request");
